@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <stdlib.h>
 
 #define WIDTH 80
 #define HEIGHT 25 
@@ -12,6 +13,7 @@ int isWithinBounds(int x,int y);
 void drawLine(size *c,int x1,int x2,int y1,int y2,char sym);
 void drawRectangle(size *c,int x1,int x2,int y1,int y2,char sym);
 void drawTriangle(size *c,int x1, int x2, int x, int y1, int y2, int y, char sym);
+void drawCircle(size *c,int r,int x,int y,char sym);
 void drawObject();
 
 // typedef struct{
@@ -34,7 +36,7 @@ void drawObject(){
     printf("1. Line\n");
     printf("2. Rectangle\n");
     printf("3. Triangle\n");
-//    printf("4. Circle\n");
+    printf("4. Circle\n");
     printf("Enter your choice: ");
     scanf("%d",&shape);
 
@@ -86,6 +88,18 @@ void drawObject(){
             printf("one or more vertices out of bound!");
         }
         break;
+
+    case 4: //Circle
+        printf("Enter coordinates of center of circle: ");
+        scanf("%d %d",&x, &y);
+        printf("Enter radius of circle: ");
+        scanf("%d",&r);
+        if(isWithinBounds(x,y)){
+            drawCircle(&c,r,x,y,sym);
+        }else{
+            printf("Center coordinates out of bound!");
+        }
+        break;
     
     default:
     printf("Invalid choice! (1-4)");
@@ -103,9 +117,7 @@ void drawObject(){
 void drawLine(size *c,int x1,int x2,int y1,int y2,char sym){
     int dx=abs(x2-x1);
     int dy=abs(y2-y1);
-//
     float slope=(float)(y2-y1)/(x2-x1);
-//
     if(x1==x2){
         int startY=(y1<y2)?y1:y2;
         int endY=(y1<y2)?y2:y1;
@@ -137,17 +149,14 @@ void drawRectangle(size *c,int x1,int x2,int y1,int y2,char sym){
     for(int x=x1;x<=x2;x++){
         c->canvas[y1][x]=sym;
     }
-//
     // bottom edge
     for(int x=x1;x<=x2;x++){
         c->canvas[y2][x]=sym;
     }
-//
     // left edge
     for(int y=y1;y<=y2;y++){
         c->canvas[y][x1]=sym;
     }
-//
     // right edge
     for(int y=y1;y<=y2;y++){
         c->canvas[y][x2]=sym;
@@ -160,9 +169,18 @@ void drawTriangle(size *c,int x1, int x2, int x, int y1, int y2, int y, char sym
     drawLine(c,x,x1,y,y1,sym);
 }
 
+void drawCircle(size *c, int r, int x, int y, char sym){
+    for(int j=y-r;j<=y+r;j++){
+        for(int i=x-r;i<=x+r;i++){
+            int dx=i-x;
+            int dy=j-y;
+            if(abs(dx*dx + dy*dy - r*r) <= r)
+                c->canvas[j][i]=sym;
+        }
+    }
+}
+
 int main(){
-    //drawLine('*');
-    //drawRectangle('_');
     drawObject();
     return 0;
 }
