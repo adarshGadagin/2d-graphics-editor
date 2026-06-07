@@ -34,9 +34,9 @@ int isWithinBounds(int x,int y);
 void displayMenu();
 void addShape(picture *p);
 // void deleteShape(picture *p);
-// void redrawPicture(picture *p);
-// void savePicture(picture *p);
-// void loadPicture(picture *p);
+void redrawPicture(picture *p);
+void savePicture(picture *p);
+void loadPicture(picture *p);
 void displayPicture(picture *p);
 void drawLine(picture *p,int x1,int x2,int y1,int y2,char sym);
 void drawRectangle(picture *p,int x1,int x2,int y1,int y2,char sym);
@@ -73,10 +73,10 @@ int main(){
                     displayPicture(&pic);
                     break;
                 case 4:
-                    // savePicture(&pic);
+                    savePicture(&pic);
                     break;
                 case 5:
-                    // loadPicture(&pic);
+                    loadPicture(&pic);
                     break;
                 case 6:
                     initializePicture(&pic);
@@ -101,11 +101,15 @@ void addShape(picture *p) {
     int shapeChoice, x1, y1, x2, y2, x3, y3, r, x, y;
     char sym;
  
+    Shape newShape;
+    newShape.symbol=sym;
+    newShape.active=1;
+
     printf("\n========== ADD SHAPE ==========\n");
     printf("1. Line\n");
     printf("2. Rectangle\n");
-    printf("3. Circle\n");
-    printf("4. Triangle\n");
+    printf("3. Triangle\n");
+    printf("4. Circle\n");
     printf("Enter shape choice: ");
     scanf("%d", &shapeChoice);
  
@@ -120,6 +124,13 @@ void addShape(picture *p) {
         printf("Enter starting points (x2 y2): ");
         scanf("%d %d",&x2,&y2);
         if(isWithinBounds(x1,y1)&&isWithinBounds(x2,y2)){
+            newShape.type=LINE;
+            newShape.x1=x1;
+            newShape.y1=y1;
+            newShape.x2=x2;
+            newShape.y2=y2;
+            p->objects[p->objectCount]=newShape;
+                p->objectCount++;
             drawLine(p,x1,x2,y1,y2,sym);
         }else{
             printf("Coordinates out of bound!(0-%d, 0-%d)",WIDTH-1,HEIGHT-1);
@@ -132,6 +143,13 @@ void addShape(picture *p) {
         printf("Enter bottom right corner (x2 y2): ");
         scanf("%d %d",&x2,&y2);
         if(isWithinBounds(x1,y1)&&isWithinBounds(x2,y2)){
+            newShape.type=RECTANGLE;
+            newShape.x1=x1;
+            newShape.y1=y1;
+            newShape.x2=x2;
+            newShape.y2=y2;
+            p->objects[p->objectCount]=newShape;
+                p->objectCount++;
             drawRectangle(p,x1,x2,y1,y2,sym);
         }else{
             printf("Coordinates out of bound!(0-%d, 0-%d)",WIDTH-1,HEIGHT-1);
@@ -146,6 +164,15 @@ void addShape(picture *p) {
         printf("Enter third vertex (x3 y3): ");
         scanf("%d %d",&x,&y);
         if(isWithinBounds(x1,y1) && isWithinBounds(x2,y2) && isWithinBounds(x,y)){
+            newShape.type=TRIANGLE;
+            newShape.x1=x1;
+            newShape.y1=y1;
+            newShape.x2=x2;
+            newShape.y2=y2;
+            newShape.x=x3;
+            newShape.y=y3;
+            p->objects[p->objectCount]=newShape;
+                p->objectCount++;
             drawTriangle(p,x1,x2,x,y1,y2,y,sym);
         }else{
             printf("one or more vertices out of bound!");
@@ -158,6 +185,12 @@ void addShape(picture *p) {
         printf("Enter radius of circle: ");
         scanf("%d",&r);
         if(isWithinBounds(x,y)){
+            newShape.type=CIRCLE;
+            newShape.x=x;
+            newShape.y=y;
+            newShape.radius=r;
+            p->objects[p->objectCount] = newShape;
+                p->objectCount++;
             drawCircle(p,r,x,y,sym);
         }else{
             printf("Center coordinates out of bound!");
@@ -261,24 +294,113 @@ void displayMenu(){
     printf("=========================\n");
 }
 
-void displayPicture(picture *p) {
+void displayPicture(picture *p){
     printf("\n");
     printf("+");
-    for (int i = 0; i < WIDTH; i++) printf("-");
+    for (int i=0; i<WIDTH; i++) 
+        printf("-");
     printf("+\n");
  
-    for (int i = 0; i < HEIGHT; i++) {
+    for (int i=0; i<HEIGHT; i++){
         printf("|");
-        for (int j = 0; j < WIDTH; j++) {
+        for (int j=0; j<WIDTH; j++){
             printf("%c", p->picture[i][j]);
         }
         printf("|\n");
     }
  
     printf("+");
-    for (int i = 0; i < WIDTH; i++) printf("-");
+    for (int i=0; i<WIDTH; i++) 
+        printf("-");
     printf("+\n");
  
     printf("\nTotal objects: %d\n", p->objectCount);
 }
 
+void savePicture(picture *p){
+    FILE *fp = fopen("Picture.txt", "w");
+    if(fp == NULL){
+        printf("Error opening file!\n");
+        return;
+    }
+ 
+    fprintf(fp, "%d\n", p->objectCount);
+    for(int i=0; i<p->objectCount; i++){
+        if(p->objects[i].active){
+            fprintf(fp, "%d %d %c %d %d %d %d %d %d\n",
+                    p->objects[i].type,
+                    p->objects[i].active,
+                    p->objects[i].symbol,
+                    p->objects[i].x1,
+                    p->objects[i].y1,
+                    p->objects[i].x2,
+                    p->objects[i].y2,
+                    p->objects[i].x,
+                    p->objects[i].y);
+        }
+    }
+ 
+    fclose(fp);
+    printf("Picture saved to 'Picture.txt'\n");
+}
+
+
+void loadPicture(picture *p){
+    FILE *fp=fopen("canvas.txt","r");
+    if (fp==NULL){
+        printf("No saved canvas found!\n");
+        return;
+    }
+ 
+    initializePicture(p);
+    int objectCount;
+    fscanf(fp,"%d\n",&objectCount);
+ 
+    for(int i=0; i<objectCount && i<MAX_OBJ; i++){
+        fscanf(fp, "%d %d %c %d %d %d %d %d %d\n",
+               (int *)&p->objects[i].type,
+               &p->objects[i].active,
+               &p->objects[i].symbol,
+               &p->objects[i].x1,
+               &p->objects[i].y1,
+               &p->objects[i].x2,
+               &p->objects[i].y2,
+               &p->objects[i].x,
+               &p->objects[i].y);
+            p->objectCount++;
+    }
+ 
+    fclose(fp);
+    redrawPicture(p);
+    printf("Canvas loaded successfully!\n");
+}
+
+void redrawPicture(picture *p){
+    for(int i=0; i<HEIGHT; i++) {
+        for(int j=0; j<WIDTH; j++) {
+            p->picture[i][j]=' ';
+        }
+    }
+ 
+    for (int i=0;i<p->objectCount;i++){
+        if(p->objects[i].active==0)
+            continue;
+ 
+        Shape *shape=&p->objects[i];
+        switch (shape->type){
+            case LINE:
+                drawLine(p, shape->x1, shape->y1, shape->x2, shape->y2, shape->symbol);
+                break;
+            case RECTANGLE:
+                drawRectangle(p, shape->x1, shape->y1, shape->x2, shape->y2, shape->symbol);
+                break;
+            case CIRCLE:
+                drawCircle(p, shape->x, shape->y, shape->radius, shape->symbol);
+                break;
+            case TRIANGLE:
+                drawTriangle(p, shape->x1, shape->y1, shape->x2, shape->y2, 
+                            shape->x, shape->y, shape->symbol);
+                break;
+        }
+    }
+}
