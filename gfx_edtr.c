@@ -22,7 +22,6 @@ typedef struct{
     int active;           // 1 if active, 0 if deleted
 } Shape;
 
-
 typedef struct{
     char picture[HEIGHT][WIDTH];
     Shape objects[MAX_OBJ];
@@ -33,7 +32,7 @@ void initializePicture(picture *p);
 int isWithinBounds(int x,int y);
 void displayMenu();
 void addShape(picture *p);
-// void deleteShape(picture *p);
+void deleteShape(picture *p);
 void redrawPicture(picture *p);
 void savePicture(picture *p);
 void loadPicture(picture *p);
@@ -43,53 +42,8 @@ void drawRectangle(picture *p,int x1,int x2,int y1,int y2,char sym);
 void drawTriangle(picture *p,int x1, int x2, int x, int y1, int y2, int y, char sym);
 void drawCircle(picture *p,int r,int x,int y,char sym);
 
-void drawObject();
-
-
 int isWithinBounds(int x, int y){
     return (x>=0 && x<WIDTH && y>=0 && y<HEIGHT);
-}
-
-int main(){
-    picture pic;
-    int choice;
-    int run=1;
-
-    initializePicture(&pic);
-
-    while (run) {
-            displayMenu();
-            printf("\nEnter your choice: ");
-            scanf("%d", &choice);
-     
-            switch (choice) {
-                case 1:
-                    addShape(&pic);
-                    break;
-                case 2:
-                    // deleteShape(&pic);
-                    break;
-                case 3:
-                    displayPicture(&pic);
-                    break;
-                case 4:
-                    savePicture(&pic);
-                    break;
-                case 5:
-                    loadPicture(&pic);
-                    break;
-                case 6:
-                    initializePicture(&pic);
-                    break;
-                case 7:
-                    run = 0;
-                    break;
-                default:
-                    printf("\nInvalid choice! Please try again.\n");
-            }
-        }
-
-    return 0;
 }
 
 void addShape(picture *p) {
@@ -102,7 +56,6 @@ void addShape(picture *p) {
     char sym;
  
     Shape newShape;
-    newShape.symbol=sym;
     newShape.active=1;
 
     printf("\n========== ADD SHAPE ==========\n");
@@ -115,6 +68,8 @@ void addShape(picture *p) {
  
     printf("Enter symbol to draw with (* or _): ");
     scanf(" %c", &sym);
+
+    newShape.symbol=sym;
 
     switch (shapeChoice)
     {
@@ -169,8 +124,8 @@ void addShape(picture *p) {
             newShape.y1=y1;
             newShape.x2=x2;
             newShape.y2=y2;
-            newShape.x=x3;
-            newShape.y=y3;
+            newShape.x=x;
+            newShape.y=y;
             p->objects[p->objectCount]=newShape;
                 p->objectCount++;
             drawTriangle(p,x1,x2,x,y1,y2,y,sym);
@@ -204,15 +159,15 @@ void addShape(picture *p) {
 
 }
 
-void initializePicture(picture *c) {
+void initializePicture(picture *p) {
     for (int i = 0; i < HEIGHT; i++) {
         for (int j = 0; j < WIDTH; j++) {
-            c->picture[i][j] = ' ';
+            p->picture[i][j] = ' ';
         }
     }
-    c->objectCount = 0;
+    p->objectCount = 0;
     for (int i = 0; i < MAX_OBJ; i++) {
-        c->objects[i].active = 0;
+        p->objects[i].active = 0;
     }
 }
 
@@ -276,10 +231,75 @@ void drawCircle(picture *p, int r, int x, int y, char sym){
         for(int i=x-r;i<=x+r;i++){
             int dx=i-x;
             int dy=j-y;
-            if(abs(dx*dx + dy*dy - r*r) <= r)
-                p->picture[j][i]=sym;
+            if(abs(dx*dx + dy*dy - r*r)<=r)
+                if (isWithinBounds(i,j))
+                    p->picture[j][i]=sym;
         }
     }
+}
+
+void deleteShape(picture *p) {
+    if (p->objectCount==0) {
+        printf("\nNo objects to delete!\n");
+        return;
+    }
+ 
+    printf("\n========== DELETE SHAPE ==========\n");
+    printf("Objects in picture:\n");
+    
+    int validCount=0;
+    for (int i=0;i<p->objectCount;i++) {
+        if (p->objects[i].active) {
+            validCount++;
+            printf("%d. ", validCount);
+            switch (p->objects[i].type) {
+                case LINE:
+                    printf("Line from (%d,%d) to (%d,%d)\n", 
+                           p->objects[i].x1, p->objects[i].y1, 
+                           p->objects[i].x2, p->objects[i].y2);
+                    break;
+                case RECTANGLE:
+                    printf("Rectangle from (%d,%d) to (%d,%d)\n", 
+                           p->objects[i].x1, p->objects[i].y1, 
+                           p->objects[i].x2, p->objects[i].y2);
+                    break;
+                case CIRCLE:
+                    printf("Circle at (%d,%d) with radius %d\n", 
+                           p->objects[i].x, p->objects[i].y, p->objects[i].radius);
+                    break;
+                case TRIANGLE:
+                    printf("Triangle with vertices (%d,%d), (%d,%d), (%d,%d)\n", 
+                           p->objects[i].x1, p->objects[i].y1, 
+                           p->objects[i].x2, p->objects[i].y2,
+                           p->objects[i].x, p->objects[i].y);
+                    break;
+            }
+        }
+    }
+ 
+    printf("\nEnter object number to delete (0 to cancel): ");
+    int choice;
+    scanf("%d",&choice);
+ 
+    if (choice==0) {
+        printf("Deletion cancelled.\n");
+        return;
+    }
+ 
+    int count=0;
+    for (int i=0;i<p->objectCount;i++) {
+        if (p->objects[i].active) {
+            count++;
+            if (count==choice) {
+                p->objects[i].active=0;
+                printf("Object deleted successfully!\n");
+                redrawPicture(p);
+                return;
+            }
+        }
+    }
+ 
+    printf("Invalid object number!\n");
 }
 
 void displayMenu(){
@@ -314,7 +334,13 @@ void displayPicture(picture *p){
         printf("-");
     printf("+\n");
  
-    printf("\nTotal objects: %d\n", p->objectCount);
+    int activeCount = 0;
+    for(int i=0;i<p->objectCount;i++){
+        if(p->objects[i].active)
+            activeCount++;
+    }
+    printf("\nTotal objects: %d\n", activeCount);
+
 }
 
 void savePicture(picture *p){
@@ -327,7 +353,7 @@ void savePicture(picture *p){
     fprintf(fp, "%d\n", p->objectCount);
     for(int i=0; i<p->objectCount; i++){
         if(p->objects[i].active){
-            fprintf(fp, "%d %d %c %d %d %d %d %d %d\n",
+            fprintf(fp, "%d %d %c %d %d %d %d %d %d %d\n",
                     p->objects[i].type,
                     p->objects[i].active,
                     p->objects[i].symbol,
@@ -336,7 +362,8 @@ void savePicture(picture *p){
                     p->objects[i].x2,
                     p->objects[i].y2,
                     p->objects[i].x,
-                    p->objects[i].y);
+                    p->objects[i].y,
+                    p->objects[i].radius);
         }
     }
  
@@ -344,11 +371,10 @@ void savePicture(picture *p){
     printf("Picture saved to 'Picture.txt'\n");
 }
 
-
 void loadPicture(picture *p){
-    FILE *fp=fopen("canvas.txt","r");
+    FILE *fp=fopen("picture.txt","r");
     if (fp==NULL){
-        printf("No saved canvas found!\n");
+        printf("No saved picture found!\n");
         return;
     }
  
@@ -357,7 +383,7 @@ void loadPicture(picture *p){
     fscanf(fp,"%d\n",&objectCount);
  
     for(int i=0; i<objectCount && i<MAX_OBJ; i++){
-        fscanf(fp, "%d %d %c %d %d %d %d %d %d\n",
+        if(fscanf(fp, "%d %d %c %d %d %d %d %d %d %d\n",
                (int *)&p->objects[i].type,
                &p->objects[i].active,
                &p->objects[i].symbol,
@@ -366,13 +392,18 @@ void loadPicture(picture *p){
                &p->objects[i].x2,
                &p->objects[i].y2,
                &p->objects[i].x,
-               &p->objects[i].y);
+               &p->objects[i].y,
+               &p->objects[i].radius)==10)
             p->objectCount++;
+        else{
+            printf("Error reading object %d\n", i);
+            break;
+        }
     }
  
     fclose(fp);
     redrawPicture(p);
-    printf("Canvas loaded successfully!\n");
+    printf("Picture loaded successfully!\n");
 }
 
 void redrawPicture(picture *p){
@@ -389,18 +420,60 @@ void redrawPicture(picture *p){
         Shape *shape=&p->objects[i];
         switch (shape->type){
             case LINE:
-                drawLine(p, shape->x1, shape->y1, shape->x2, shape->y2, shape->symbol);
+                drawLine(p, shape->x1, shape->x2, shape->y1, shape->y2, shape->symbol);
                 break;
             case RECTANGLE:
-                drawRectangle(p, shape->x1, shape->y1, shape->x2, shape->y2, shape->symbol);
+                drawRectangle(p, shape->x1, shape->x2, shape->y1, shape->y2, shape->symbol);
                 break;
             case CIRCLE:
-                drawCircle(p, shape->x, shape->y, shape->radius, shape->symbol);
+                drawCircle(p, shape->radius, shape->x, shape->y, shape->symbol);
                 break;
             case TRIANGLE:
-                drawTriangle(p, shape->x1, shape->y1, shape->x2, shape->y2, 
-                            shape->x, shape->y, shape->symbol);
+                drawTriangle(p, shape->x1, shape->x2, shape->x, shape->y1, 
+                            shape->y2, shape->y, shape->symbol);
                 break;
         }
     }
+}
+
+int main(){
+    picture pic;
+    int choice;
+    int run=1;
+
+    initializePicture(&pic);
+
+    while (run) {
+            displayMenu();
+            printf("\nEnter your choice: ");
+            scanf("%d", &choice);
+     
+            switch (choice) {
+                case 1:
+                    addShape(&pic);
+                    break;
+                case 2:
+                    deleteShape(&pic);
+                    break;
+                case 3:
+                    displayPicture(&pic);
+                    break;
+                case 4:
+                    savePicture(&pic);
+                    break;
+                case 5:
+                    loadPicture(&pic);
+                    break;
+                case 6:
+                    initializePicture(&pic);
+                    break;
+                case 7:
+                    run = 0;
+                    break;
+                default:
+                    printf("\nInvalid choice! Please try again.\n");
+            }
+        }
+
+    return 0;
 }
