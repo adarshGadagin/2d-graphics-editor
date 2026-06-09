@@ -6,6 +6,7 @@
 #define HEIGHT 25 
 #define MAX_OBJ 50
 
+// Shape types
 typedef enum {
     LINE,
     RECTANGLE,
@@ -13,7 +14,7 @@ typedef enum {
     TRIANGLE
 } ShapeType;
 
-// to store object information
+// Structure to store shape information
 typedef struct{
     ShapeType type;
     int x1, y1, x2, y2;  // For line, rectangle, triangle
@@ -22,31 +23,18 @@ typedef struct{
     int active;           // 1 if active, 0 if deleted
 } Shape;
 
+// Picture structure
 typedef struct{
     char picture[HEIGHT][WIDTH];
     Shape objects[MAX_OBJ];
     int objectCount;
 }picture;
 
-void initializePicture(picture *p);
-int isWithinBounds(int x,int y);
-void displayMenu();
-void addShape(picture *p);
-void deleteShape(picture *p);
-void redrawPicture(picture *p);
-void savePicture(picture *p);
-void loadPicture(picture *p);
-void displayPicture(picture *p);
-void drawLine(picture *p,int x1,int x2,int y1,int y2,char sym);
-void drawRectangle(picture *p,int x1,int x2,int y1,int y2,char sym);
-void drawTriangle(picture *p,int x1, int x2, int x, int y1, int y2, int y, char sym);
-void drawCircle(picture *p,int r,int x,int y,char sym);
-
 int isWithinBounds(int x, int y){
     return (x>=0 && x<WIDTH && y>=0 && y<HEIGHT);
 }
 
-void addShape(picture *p) {
+void addShape(picture *p){
     if (p->objectCount >= MAX_OBJ) {
         printf("\nMaximum objects limit reached!\n");
         return;
@@ -159,7 +147,7 @@ void addShape(picture *p) {
 
 }
 
-void initializePicture(picture *p) {
+void initializePicture(picture *p){
     for (int i = 0; i < HEIGHT; i++) {
         for (int j = 0; j < WIDTH; j++) {
             p->picture[i][j] = ' ';
@@ -238,7 +226,7 @@ void drawCircle(picture *p, int r, int x, int y, char sym){
     }
 }
 
-void deleteShape(picture *p) {
+void deleteShape(picture *p){
     if (p->objectCount==0) {
         printf("\nNo objects to delete!\n");
         return;
@@ -407,12 +395,14 @@ void loadPicture(picture *p){
 }
 
 void redrawPicture(picture *p){
+    // clear picture
     for(int i=0; i<HEIGHT; i++) {
         for(int j=0; j<WIDTH; j++) {
             p->picture[i][j]=' ';
         }
     }
  
+    // Redraw all active objects
     for (int i=0;i<p->objectCount;i++){
         if(p->objects[i].active==0)
             continue;
