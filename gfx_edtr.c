@@ -34,6 +34,85 @@ int isWithinBounds(int x, int y){
     return (x>=0 && x<WIDTH && y>=0 && y<HEIGHT);
 }
 
+void initializePicture(picture *p){
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++) {
+            p->picture[i][j] = ' ';
+        }
+    }
+    p->objectCount = 0;
+    for (int i = 0; i < MAX_OBJ; i++) {
+        p->objects[i].active = 0;
+    }
+}
+
+void drawLine(picture *p,int x1,int x2,int y1,int y2,char sym){
+    int dx=abs(x2-x1);
+    int dy=abs(y2-y1);
+    float slope=(float)(y2-y1)/(x2-x1);
+    if(x1==x2){
+        int startY=(y1<y2)?y1:y2;
+        int endY=(y1<y2)?y2:y1;
+        for(int y=startY;y<endY;y++){
+           p->picture[y][x1]='*';
+        }
+    }else{
+        if(dx>=dy){
+            int startX=(x1<x2)?x1:x2;
+            int endX=(x1<x2)?x2:x1;
+            for(int x=startX;x<=endX;x++){
+                int y=(int)round(y1+slope*(x-x1));
+                p->picture[y][x]=sym;
+            }
+        }else{
+            int startY=(y1<y2)?y1:y2;
+            int endY=(y1<y2)?y2:y1;
+            float inverse_slope=(float)(x2-x1)/(y2-y1);
+            for(int y=startY;y<=endY;y++){
+                int x=(int)round(x1+inverse_slope*(y-y1));
+                p->picture[y][x]=sym;
+            }
+        }
+    }
+}
+
+void drawRectangle(picture *p,int x1,int x2,int y1,int y2,char sym){
+    // top edge
+    for(int x=x1;x<=x2;x++){
+        p->picture[y1][x]=sym;
+    }
+    // bottom edge
+    for(int x=x1;x<=x2;x++){
+        p->picture[y2][x]=sym;
+    }
+    // left edge
+    for(int y=y1;y<=y2;y++){
+        p->picture[y][x1]=sym;
+    }
+    // right edge
+    for(int y=y1;y<=y2;y++){
+        p->picture[y][x2]=sym;
+    }
+}
+
+void drawTriangle(picture *p,int x1, int x2, int x, int y1, int y2, int y, char sym){
+    drawLine(p,x1,x2,y1,y2,sym);
+    drawLine(p,x2,x,y2,y,sym);
+    drawLine(p,x,x1,y,y1,sym);
+}
+
+void drawCircle(picture *p, int r, int x, int y, char sym){
+    for(int j=y-r;j<=y+r;j++){
+        for(int i=x-r;i<=x+r;i++){
+            int dx=i-x;
+            int dy=j-y;
+            if(abs(dx*dx + dy*dy - r*r)<=r)
+                if (isWithinBounds(i,j))
+                    p->picture[j][i]=sym;
+        }
+    }
+}
+
 void addShape(picture *p){
     if (p->objectCount >= MAX_OBJ) {
         printf("\nMaximum objects limit reached!\n");
@@ -147,81 +226,34 @@ void addShape(picture *p){
 
 }
 
-void initializePicture(picture *p){
-    for (int i = 0; i < HEIGHT; i++) {
-        for (int j = 0; j < WIDTH; j++) {
-            p->picture[i][j] = ' ';
+void redrawPicture(picture *p){
+    // clear picture
+    for(int i=0; i<HEIGHT; i++) {
+        for(int j=0; j<WIDTH; j++) {
+            p->picture[i][j]=' ';
         }
     }
-    p->objectCount = 0;
-    for (int i = 0; i < MAX_OBJ; i++) {
-        p->objects[i].active = 0;
-    }
-}
-
-void drawLine(picture *p,int x1,int x2,int y1,int y2,char sym){
-    int dx=abs(x2-x1);
-    int dy=abs(y2-y1);
-    float slope=(float)(y2-y1)/(x2-x1);
-    if(x1==x2){
-        int startY=(y1<y2)?y1:y2;
-        int endY=(y1<y2)?y2:y1;
-        for(int y=startY;y<endY;y++){
-           p->picture[y][x1]='*';
-        }
-    }else{
-        if(dx>=dy){
-            int startX=(x1<x2)?x1:x2;
-            int endX=(x1<x2)?x2:x1;
-            for(int x=startX;x<=endX;x++){
-                int y=(int)round(y1+slope*(x-x1));
-                p->picture[y][x]=sym;
-            }
-        }else{
-            int startY=(y1<y2)?y1:y2;
-            int endY=(y1<y2)?y2:y1;
-            float inverse_slope=(float)(x2-x1)/(y2-y1);
-            for(int y=startY;y<=endY;y++){
-                int x=(int)round(x1+inverse_slope*(y-y1));
-                p->picture[y][x]=sym;
-            }
-        }
-    }
-}
-
-void drawRectangle(picture *p,int x1,int x2,int y1,int y2,char sym){
-    // top edge
-    for(int x=x1;x<=x2;x++){
-        p->picture[y1][x]=sym;
-    }
-    // bottom edge
-    for(int x=x1;x<=x2;x++){
-        p->picture[y2][x]=sym;
-    }
-    // left edge
-    for(int y=y1;y<=y2;y++){
-        p->picture[y][x1]=sym;
-    }
-    // right edge
-    for(int y=y1;y<=y2;y++){
-        p->picture[y][x2]=sym;
-    }
-}
-
-void drawTriangle(picture *p,int x1, int x2, int x, int y1, int y2, int y, char sym){
-    drawLine(p,x1,x2,y1,y2,sym);
-    drawLine(p,x2,x,y2,y,sym);
-    drawLine(p,x,x1,y,y1,sym);
-}
-
-void drawCircle(picture *p, int r, int x, int y, char sym){
-    for(int j=y-r;j<=y+r;j++){
-        for(int i=x-r;i<=x+r;i++){
-            int dx=i-x;
-            int dy=j-y;
-            if(abs(dx*dx + dy*dy - r*r)<=r)
-                if (isWithinBounds(i,j))
-                    p->picture[j][i]=sym;
+ 
+    // Redraw all active objects
+    for (int i=0;i<p->objectCount;i++){
+        if(p->objects[i].active==0)
+            continue;
+ 
+        Shape *shape=&p->objects[i];
+        switch (shape->type){
+            case LINE:
+                drawLine(p, shape->x1, shape->x2, shape->y1, shape->y2, shape->symbol);
+                break;
+            case RECTANGLE:
+                drawRectangle(p, shape->x1, shape->x2, shape->y1, shape->y2, shape->symbol);
+                break;
+            case CIRCLE:
+                drawCircle(p, shape->radius, shape->x, shape->y, shape->symbol);
+                break;
+            case TRIANGLE:
+                drawTriangle(p, shape->x1, shape->x2, shape->x, shape->y1, 
+                            shape->y2, shape->y, shape->symbol);
+                break;
         }
     }
 }
@@ -319,7 +351,7 @@ void displayPicture(picture *p){
  
     printf("+");
     for (int i=0; i<WIDTH; i++) 
-        printf("-");
+        printf("-");                                                                                                                                                                                    
     printf("+\n");
  
     int activeCount = 0;
@@ -392,38 +424,6 @@ void loadPicture(picture *p){
     fclose(fp);
     redrawPicture(p);
     printf("Picture loaded successfully!\n");
-}
-
-void redrawPicture(picture *p){
-    // clear picture
-    for(int i=0; i<HEIGHT; i++) {
-        for(int j=0; j<WIDTH; j++) {
-            p->picture[i][j]=' ';
-        }
-    }
- 
-    // Redraw all active objects
-    for (int i=0;i<p->objectCount;i++){
-        if(p->objects[i].active==0)
-            continue;
- 
-        Shape *shape=&p->objects[i];
-        switch (shape->type){
-            case LINE:
-                drawLine(p, shape->x1, shape->x2, shape->y1, shape->y2, shape->symbol);
-                break;
-            case RECTANGLE:
-                drawRectangle(p, shape->x1, shape->x2, shape->y1, shape->y2, shape->symbol);
-                break;
-            case CIRCLE:
-                drawCircle(p, shape->radius, shape->x, shape->y, shape->symbol);
-                break;
-            case TRIANGLE:
-                drawTriangle(p, shape->x1, shape->x2, shape->x, shape->y1, 
-                            shape->y2, shape->y, shape->symbol);
-                break;
-        }
-    }
 }
 
 int main(){
